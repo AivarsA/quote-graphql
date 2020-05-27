@@ -204,8 +204,8 @@ class SaveCartItem implements ResolverInterface
         $customizableOptionsArrayData = $options['product_option']['extension_attributes']['customizable_options_multi'] ?? [];
         $customizableOptionsMulti = $this->getCustomizableOptions($customizableOptionsArrayData, true);
         // Necessary for uploaded files
-        $customizableOptionsData = $options['product_option']['extension_attributes']['file_extension'] ?? [];
-        $customizableOptions = $this->getCustomizableOptions($customizableOptionsData, false, true);
+        $customizableOptionsFileData = $options['product_option']['extension_attributes']['file_extension'] ?? [];
+        $customizableOptionsFile = $this->getCustomizableOptions($customizableOptionsFileData, false, true);
 
         if (count($customizableOptions)) {
             foreach ($customizableOptions as $key => $value) {
@@ -218,12 +218,17 @@ class SaveCartItem implements ResolverInterface
                 $data['options'][$key] = $value;
             }
         }
+
+        if (count($customizableOptionsFile)) {
+            foreach ($customizableOptionsFile as $key => $value) {
+                $data['options'][$key] = $value;
+            }
+        }
     }
 
     /**
      * @param $customizableOptions
      * @param bool $isMulti
-     * @param bool $isFile
      * @return array
      */
     private function getCustomizableOptions($customizableOptions, $isMulti = false, $isFile = false): array
@@ -238,7 +243,7 @@ class SaveCartItem implements ResolverInterface
                     $decodedFile = $this->fileUpload->decodeFiles($customizableOption['files_data']);
                     $data[$customizableOption['option_id']] = $decodedFile;
                 } else {
-                    $data[$customizableOption['option_id']][] = $customizableOption['option_value'];
+                    $data[$customizableOption['option_id']] = $customizableOption['option_value'];
                 }
             }
         }
