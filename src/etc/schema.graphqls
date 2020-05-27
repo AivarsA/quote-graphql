@@ -57,6 +57,7 @@ input ExtensionsAttributeInput {
     configurable_item_options: [ConfigurableItemOptionsInput]
     customizable_options: [CustomizableOptionsInput]
     customizable_options_multi: [CustomizableOptionsInput]
+    file_extension: [FilesExtensionInput]
 }
 
 input ConfigurableItemOptionsInput {
@@ -67,6 +68,16 @@ input ConfigurableItemOptionsInput {
 input CustomizableOptionsInput {
     option_id: String!
     option_value: String
+}
+
+input FilesExtensionInput {
+    option_id: String
+    files_data: [FilesData]
+}
+
+input FilesData {
+    name: String!
+    encoded_file: String
 }
 
 input PaymentInformation {

@@ -36,6 +36,7 @@ use Magento\Framework\DataObject;
 use Magento\Catalog\Model\Product\Attribute\Repository;
 use Magento\CatalogInventory\Api\StockStatusRepositoryInterface;
 use Magento\Quote\Api\Data\CartItemInterface;
+use ScandiPWA\QuoteGraphQl\Model\Uploads\Upload;
 
 /**
  * Class SaveCartItem
@@ -84,6 +85,11 @@ class SaveCartItem implements ResolverInterface
     protected $stockStatusRepository;
 
     /**
+     * @var Upload
+     */
+    protected $fileUpload;
+
+    /**
      * SaveCartItem constructor.
      *
      * @param QuoteIdMaskFactory $quoteIdMaskFactory
@@ -103,7 +109,8 @@ class SaveCartItem implements ResolverInterface
         Repository $attributeRepository,
         QuoteIdMask $quoteIdMaskResource,
         Configurable $configurableType,
-        StockStatusRepositoryInterface $stockStatusRepository
+        StockStatusRepositoryInterface $stockStatusRepository,
+        Upload $fileUpload
     ) {
         $this->quoteIdMaskFactory = $quoteIdMaskFactory;
         $this->quoteRepository = $quoteRepository;
@@ -113,6 +120,7 @@ class SaveCartItem implements ResolverInterface
         $this->quoteIdMaskResource = $quoteIdMaskResource;
         $this->configurableType = $configurableType;
         $this->stockStatusRepository = $stockStatusRepository;
+        $this->fileUpload = $fileUpload;
     }
 
     /**
@@ -195,6 +203,9 @@ class SaveCartItem implements ResolverInterface
         // Necessary for multi selections, i.e., checkboxes which have same parent option_id
         $customizableOptionsArrayData = $options['product_option']['extension_attributes']['customizable_options_multi'] ?? [];
         $customizableOptionsMulti = $this->getCustomizableOptions($customizableOptionsArrayData, true);
+        // Necessary for uploaded files
+        $customizableOptionsData = $options['product_option']['extension_attributes']['file_extension'] ?? [];
+        $customizableOptions = $this->getCustomizableOptions($customizableOptionsData, false, true);
 
         if (count($customizableOptions)) {
             foreach ($customizableOptions as $key => $value) {
@@ -212,20 +223,22 @@ class SaveCartItem implements ResolverInterface
     /**
      * @param $customizableOptions
      * @param bool $isMulti
+     * @param bool $isFile
      * @return array
      */
-    private function getCustomizableOptions($customizableOptions, $isMulti = false): array
+    private function getCustomizableOptions($customizableOptions, $isMulti = false, $isFile = false): array
     {
         $data = [];
 
         if (count($customizableOptions)) {
-            if ($isMulti) {
-                foreach ($customizableOptions as $customizableOption) {
+            foreach ($customizableOptions as $customizableOption) {
+                if ($isMulti) {
                     $data[$customizableOption['option_id']][] = $customizableOption['option_value'];
-                }
-            } else {
-                foreach ($customizableOptions as $customizableOption) {
-                    $data[$customizableOption['option_id']] = $customizableOption['option_value'];
+                } elseif ($isFile) {
+                    $decodedFile = $this->fileUpload->decodeFiles($customizableOption['files_data']);
+                    $data[$customizableOption['option_id']] = $decodedFile;
+                } else {
+                    $data[$customizableOption['option_id']][] = $customizableOption['option_value'];
                 }
             }
         }
